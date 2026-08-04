@@ -8,6 +8,15 @@
 
 using namespace sf;
 
+
+void UpdateBranches(int seed);
+
+const int NUM_BRANCHES = 6;
+std::vector<Sprite> branches;
+
+enum class Side { LEFT, RIGHT, NONE };
+Side branchPositions[NUM_BRANCHES];
+
 int main()
 {
     // Seed the RNG once, at start-up (not on every spawn).
@@ -17,7 +26,6 @@ int main()
     RenderWindow window(vm, "Timber!", State::Windowed);
 
     // --- Resources ---
-    // In SFML 3 these constructors throw sf::Exception if the file is missing.
     Texture textureBackground("resources/graphics/background.png");
     Sprite spriteBackground(textureBackground);
     spriteBackground.setPosition(Vector2f(0, 0));
@@ -59,20 +67,32 @@ int main()
 
     Font font("resources/fonts/testFont.ttf");
 
-    // sf::Text has no default constructor in SFML 3, and the font is the first argument.
     Text messageText(font, "Type Enter to start!", 75);
     Text scoreText(font, "Score = 0", 100);
 
     messageText.setFillColor(Color::White);
     scoreText.setFillColor(Color::White);
 
-    // sf::FloatRect now exposes position/size instead of left/top/width/height.
+    Texture textureBranch("resources/graphics/branch.png");
+    for (int i = 0; i < NUM_BRANCHES; i++) {
+        branches.emplace_back(textureBranch);
+        branches[i].setPosition(Vector2f(-2000, -2000)); // In world position
+        branches[i].setOrigin(Vector2f(220, 20));  // pivot point in own coordinates (center of image just half of it)
+    }
+
     FloatRect textRect = messageText.getLocalBounds();
     messageText.setOrigin(Vector2f(
         textRect.position.x + textRect.size.x / 2.0f,
         textRect.position.y + textRect.size.y / 2.0f));
     messageText.setPosition(Vector2f(1920 / 2.0f, 1080 / 2.0f));
     scoreText.setPosition(Vector2f(20, 20));
+
+
+    UpdateBranches(1);
+    UpdateBranches(2);
+    UpdateBranches(3);
+    UpdateBranches(4);
+    UpdateBranches(5);
 
     while (window.isOpen())
     {
@@ -181,6 +201,25 @@ int main()
             std::stringstream ss;
             ss << "Score = " << score;
             scoreText.setString(ss.str());
+
+            for (int i = 0; i < NUM_BRANCHES; i++)
+            {
+                float height = i * 150;
+                if (branchPositions[i] == Side::LEFT)
+                {
+                    branches[i].setPosition(Vector2f(610, height));
+                    branches[i].setRotation(degrees(180));
+                }
+                else if (branchPositions[i] == Side::RIGHT)
+                {
+                    branches[i].setPosition(Vector2f(1330, height));
+                    branches[i].setRotation(degrees(0));
+                }
+                else
+                {
+                    branches[i].setPosition(Vector2f(3000, height));
+                }
+            }
         }
 
         /*
@@ -194,6 +233,12 @@ int main()
         window.draw(spriteCloud1);
         window.draw(spriteCloud2);
         window.draw(spriteCloud3);
+
+        for (int i = 0; i < NUM_BRANCHES; i++)
+        {
+            window.draw(branches[i]);
+        }
+
         window.draw(spriteTree);
         window.draw(spriteBee);
         window.draw(scoreText);
@@ -205,4 +250,25 @@ int main()
     }
 
     return 0;
+}
+
+void UpdateBranches(int seed)
+{
+    for (int j = NUM_BRANCHES - 1; j > 0; j--) {
+        branchPositions[j] = branchPositions[j - 1];
+    }
+
+    srand((int)time(0) + seed);
+    int r = (rand() % 5);
+    switch (r) {
+    case 0:
+        branchPositions[0] = Side::LEFT;
+        break;
+    case 1:
+        branchPositions[0] = Side::RIGHT;
+        break;
+    default:
+        branchPositions[0] = Side::NONE;
+        break;
+    }
 }
